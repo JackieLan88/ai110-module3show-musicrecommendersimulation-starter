@@ -125,10 +125,10 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     score = 0.0
     reasons = []
     
-    # Genre match: 2 points
+    # Genre match: 1 point (halved)
     if song["genre"] == user_prefs.get("genre"):
-        score += 2.0
-        reasons.append(f"genre matches ({song['genre']}), 2 points")
+        score += 1.0
+        reasons.append(f"genre matches ({song['genre']}), 1 point")
     
     # Mood match: 1 point
     if song["mood"] == user_prefs.get("mood"):
@@ -138,18 +138,18 @@ def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
     # Gaussian scoring for numerical features
     sigma = 0.15
     numerical_features = [
-        ("energy", song["energy"], user_prefs.get("energy", 0.5)),
-        ("tempo_bpm", song["tempo_bpm"] / TEMPO_MAX, user_prefs.get("tempo_bpm", 120.0) / TEMPO_MAX),
-        ("valence", song["valence"], user_prefs.get("valence", 0.5)),
-        ("danceability", song["danceability"], user_prefs.get("danceability", 0.5)),
-        ("acousticness", song["acousticness"], user_prefs.get("acousticness", 0.5)),
+        ("energy",        song["energy"],                               user_prefs.get("energy", 0.5),               2.0),
+        ("tempo_bpm",     song["tempo_bpm"] / TEMPO_MAX,                user_prefs.get("tempo_bpm", 120.0) / TEMPO_MAX, 1.0),
+        ("valence",       song["valence"],                              user_prefs.get("valence", 0.5),              1.0),
+        ("danceability",  song["danceability"],                         user_prefs.get("danceability", 0.5),         1.0),
+        ("acousticness",  song["acousticness"],                         user_prefs.get("acousticness", 0.5),         1.0),
     ]
-    
+
     gaussian_score = 0.0
-    for _, song_val, user_val in numerical_features:
+    for _, song_val, user_val, weight in numerical_features:
         diff = abs(song_val - user_val)
         gaussian = math.exp(-(diff ** 2) / (2 * sigma ** 2))
-        gaussian_score += gaussian
+        gaussian_score += gaussian * weight
     
     score += gaussian_score
     
